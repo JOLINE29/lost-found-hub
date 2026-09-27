@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ItemType {
+  LOST
+  FOUND
+}
+
+enum ItemStatus {
+  ACTIVE
+  MATCHED
+  CLAIMED
+  RECOVERED
+  ARCHIVED
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MatchStatus {
+  PENDING
+  CONFIRMED
+  DISMISSED
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  password      String
+  role          Role           @default(USER)
+  createdAt     DateTime       @default(now())
+  items         Item[]
+  claims        Claim[]
+  sentMessages  Message[]
+  notifications Notification[]
+}
+
+model Item {
+  id            String     @id @default(uuid())
+  reporterId    String
+  reporter      User       @relation(fields: [reporterId], references: [id])
+  type          ItemType
+  title         String
+  category      String
+  description   String
+  imageUrl      String?
+  location      String
+  dateLostFound DateTime
+  status        ItemStatus @default(ACTIVE)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  claims        Claim[]
+  lostMatches   Match[]    @relation("LostItem")
+  foundMatches  Match[]    @relation("FoundItem")
+}
+
+model Claim {
+  id         String      @id @default(uuid())
+  itemId     String
+  item       Item        @relation(fields: [itemId], references: [id])
+  claimantId String
+  claimant   User        @relation(fields: [claimantId], references: [id])
+  message    String
+  status     ClaimStatus @default(PENDING)
+  createdAt  DateTime    @default(now())
+  room       Room?
+}
+
+model Match {
+  id          String      @id @default(uuid())
+  lostItemId  String
+  lostItem    Item        @relation("LostItem", fields: [lostItemId], references: [id])
+  foundItemId String
+  foundItem   Item        @relation("FoundItem", fields: [foundItemId], references: [id])
+  score       Float
+  status      MatchStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+}
+
+model Room {
+  id        String    @id @default(uuid())
+  claimId   String    @unique
+  claim     Claim     @relation(fields: [claimId], references: [id])
+  createdAt DateTime  @default(now())
+  messages  Message[]
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id])
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String             @id @default(uuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  link      String?
+  status    NotificationStatus @default(UNREAD)
+  createdAt DateTime           @default(now())
+}
