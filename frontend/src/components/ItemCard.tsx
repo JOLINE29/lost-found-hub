@@ -1,36 +1,47 @@
 import { Link } from "react-router-dom";
-import { MapPin, Calendar, Tag } from "lucide-react";
+import { MapPin, Calendar } from "lucide-react";
 import type { Item } from "../types";
 import { format } from "date-fns";
+import { getCategoryImage } from "../lib/categoryImages";
 
 const STATUS_BADGE: Record<string, string> = {
-  ACTIVE: "badge-found",
-  MATCHED: "badge-matched",
-  CLAIMED: "badge-claimed",
-  RECOVERED: "badge-recovered",
+  ACTIVE:   "",
+  MATCHED:  "badge-matched",
+  CLAIMED:  "badge-claimed",
+  RECOVERED:"badge-recovered",
   ARCHIVED: "bg-gray-100 text-gray-600 text-xs px-2.5 py-0.5 rounded-full font-medium",
 };
 
 export default function ItemCard({ item }: { item: Item }) {
+  const imgSrc = item.imageUrl ?? getCategoryImage(item.category);
+
   return (
     <div className="card overflow-hidden hover:shadow-md transition-shadow group">
-      <div className="aspect-video bg-gray-100 overflow-hidden relative">
-        {item.imageUrl ? (
-          <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Tag className="w-10 h-10 text-gray-300" />
-          </div>
-        )}
+      <div className="relative aspect-video overflow-hidden">
+        <img
+          src={imgSrc}
+          alt={item.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        {/* gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
+        {/* top badges */}
         <div className="absolute top-2 left-2 flex gap-1.5">
           <span className={item.type === "LOST" ? "badge-lost" : "badge-found"}>
             {item.type === "LOST" ? "🔍 Lost" : "📦 Found"}
           </span>
-          {item.status !== "ACTIVE" && (
-            <span className={STATUS_BADGE[item.status] || ""}>{item.status}</span>
+          {item.status !== "ACTIVE" && STATUS_BADGE[item.status] && (
+            <span className={STATUS_BADGE[item.status]}>{item.status}</span>
           )}
         </div>
+
+        {/* category pill bottom-right */}
+        <span className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">
+          {item.category}
+        </span>
       </div>
+
       <div className="p-4">
         <h3 className="font-semibold text-gray-900 truncate">{item.title}</h3>
         <p className="text-sm text-gray-500 mt-1 line-clamp-2">{item.description}</p>

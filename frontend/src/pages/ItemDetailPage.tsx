@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { MapPin, Calendar, Tag, User, ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
+import { MapPin, Calendar, Tag, User, ArrowLeft, AlertCircle, CheckCircle, Lock } from "lucide-react";
 import type { Item } from "../types";
+import { getCategoryImage } from "../lib/categoryImages";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/client";
 import toast from "react-hot-toast";
@@ -56,6 +57,8 @@ export default function ItemDetailPage() {
   const isOwner = user?.id === item.reporterId;
   const canClaim = user && !isOwner && item.type === "FOUND" && ["ACTIVE", "MATCHED"].includes(item.status);
   const matches = item.type === "LOST" ? item.lostMatches : item.foundMatches;
+  // pending claims on this item (visible to finder/owner)
+  const pendingClaims = item.claims?.filter(c => c.status === "PENDING") ?? [];
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
@@ -64,13 +67,19 @@ export default function ItemDetailPage() {
       </button>
 
       <div className="card overflow-hidden">
-        {item.imageUrl ? (
-          <img src={item.imageUrl} alt={item.title} className="w-full h-64 object-cover" />
-        ) : (
-          <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
-            <Tag className="w-16 h-16 text-gray-300" />
-          </div>
-        )}
+        <div className="relative w-full h-64 overflow-hidden">
+          <img
+            src={item.imageUrl ?? getCategoryImage(item.category)}
+            alt={item.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+          {!item.imageUrl && (
+            <div className="absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm flex items-center gap-1">
+              <Tag className="w-3 h-3" /> {item.category}
+            </div>
+          )}
+        </div>
 
         <div className="p-6">
           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -140,6 +149,27 @@ export default function ItemDetailPage() {
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
               <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
               <p className="text-sm text-blue-700 font-medium">This item has been successfully recovered and returned to its owner.</p>
+            </div>
+          )}
+
+          {/* Finder sees pending claims with link to verification room */}
+          {isOwner && pendingClaims.length > 0 && (
+            <div className="mt-6">
+              <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <Lock className="w-4 h-4 text-indigo-500" /> Pending Claims
+              </h2>
+              <div className="space-y-2">
+                {pendingClaims.map(claim => (
+                  <Link key={claim.id} to={`/claims/${claim.id}`}
+                    className="flex items-center justify-between p-3 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Claim by {claim.claimant?.name ?? "Someone"}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{claim.message}</p>
+                    </div>
+                    <span className="text-xs bg-indigo-600 text-white px-3 py-1 rounded-full font-medium whitespace-nowrap ml-3">🔐 Open Room</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
 

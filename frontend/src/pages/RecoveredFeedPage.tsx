@@ -3,6 +3,7 @@ import { MapPin, Calendar, PartyPopper } from "lucide-react";
 import type { Item } from "../types";
 import api from "../api/client";
 import { format, formatDistanceStrict } from "date-fns";
+import { getCategoryImage } from "../lib/categoryImages";
 
 export default function RecoveredFeedPage() {
   const [items, setItems] = useState<Item[]>([]);
@@ -44,18 +45,23 @@ export default function RecoveredFeedPage() {
       ) : (
         <div className="space-y-3">
           {items.map(item => (
-            <div key={item.id} className="card p-5 flex items-center gap-4 border-l-4 border-green-400">
-              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl">
-                🎉
+            <div key={item.id} className="card overflow-hidden flex flex-col sm:flex-row border-l-4 border-green-400 hover:shadow-md transition-shadow">
+              <div className="sm:w-36 h-32 sm:h-auto flex-shrink-0 overflow-hidden">
+                <img
+                  src={item.imageUrl ?? getCategoryImage(item.category)}
+                  alt={item.title}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 p-4 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-lg">🎉</span>
                   <h3 className="font-semibold text-gray-900">{item.title}</h3>
                   <span className="badge-recovered">Recovered</span>
                   <span className="text-xs text-gray-400">{item.category}</span>
                 </div>
                 <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{item.description}</p>
-                <div className="flex items-center gap-4 mt-2">
+                <div className="flex items-center gap-4 mt-2 flex-wrap">
                   <span className="flex items-center gap-1 text-xs text-gray-400">
                     <MapPin className="w-3 h-3" /> {item.location}
                   </span>

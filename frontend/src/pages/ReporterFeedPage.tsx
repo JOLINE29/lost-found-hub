@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Package, Search, FileText, MapPin, Calendar } from "lucide-react";
+import { Package, Search, FileText, MapPin, Calendar, Lock, MessageSquare } from "lucide-react";
 import type { Item, Claim } from "../types";
 import api from "../api/client";
 import { format } from "date-fns";
@@ -81,26 +81,45 @@ export default function ReporterFeedPage() {
               <p>No reports yet. <Link to="/report" className="text-indigo-600 hover:underline">Report an item</Link></p>
             </div>
           ) : myItems.map(item => (
-            <Link key={item.id} to={`/items/${item.id}`} className="card p-4 flex items-center gap-4 hover:shadow-md transition-shadow block">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${item.type === "LOST" ? "bg-red-50" : "bg-green-50"}`}>
-                {item.type === "LOST" ? <Search className="w-5 h-5 text-red-500" /> : <Package className="w-5 h-5 text-green-500" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-medium text-gray-900 truncate">{item.title}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[item.status]}`}>{item.status}</span>
-                  {item.lostMatches && item.lostMatches.length > 0 && (
-                    <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-100 text-yellow-700">
-                      {item.lostMatches.length} match{item.lostMatches.length > 1 ? "es" : ""}
-                    </span>
-                  )}
+            <div key={item.id} className="card p-4 hover:shadow-md transition-shadow">
+              <Link to={`/items/${item.id}`} className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${item.type === "LOST" ? "bg-red-50" : "bg-green-50"}`}>
+                  {item.type === "LOST" ? <Search className="w-5 h-5 text-red-500" /> : <Package className="w-5 h-5 text-green-500" />}
                 </div>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="flex items-center gap-1 text-xs text-gray-500"><MapPin className="w-3 h-3" />{item.location}</span>
-                  <span className="flex items-center gap-1 text-xs text-gray-500"><Calendar className="w-3 h-3" />{format(new Date(item.dateLostFound), "MMM d")}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-gray-900 truncate">{item.title}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[item.status]}`}>{item.status}</span>
+                    {item.lostMatches && item.lostMatches.length > 0 && (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-100 text-yellow-700">
+                        {item.lostMatches.length} match{item.lostMatches.length > 1 ? "es" : ""}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="flex items-center gap-1 text-xs text-gray-500"><MapPin className="w-3 h-3" />{item.location}</span>
+                    <span className="flex items-center gap-1 text-xs text-gray-500"><Calendar className="w-3 h-3" />{format(new Date(item.dateLostFound), "MMM d")}</span>
+                  </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+              {/* Show verification room links for found items with pending claims */}
+              {item.type === "FOUND" && item.claims && item.claims.filter(c => c.status === "PENDING").length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                  {item.claims.filter(c => c.status === "PENDING").map(claim => (
+                    <Link key={claim.id} to={`/claims/${claim.id}`}
+                      className="flex items-center justify-between px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-indigo-500" />
+                        <span className="text-sm text-indigo-700 font-medium">Claim by {claim.claimant?.name ?? "Someone"}</span>
+                      </div>
+                      <span className="flex items-center gap-1 text-xs bg-indigo-600 text-white px-2.5 py-1 rounded-full">
+                        <Lock className="w-3 h-3" /> Open Room
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
