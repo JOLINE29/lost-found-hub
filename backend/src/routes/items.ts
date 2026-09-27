@@ -1,19 +1,11 @@
 import { Router, Response } from "express";
-import multer from "multer";
-import path from "path";
-import { v4 as uuidv4 } from "uuid";
 import prisma from "../lib/prisma";
 import { authenticate, AuthRequest } from "../middleware/auth";
 import { computeMatchScore } from "../lib/matcher";
 import { ItemType, ItemStatus } from "@prisma/client";
+import { upload } from "../lib/cloudinary";
 
 const router = Router();
-
-const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (_, file, cb) => cb(null, uuidv4() + path.extname(file.originalname)),
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 // GET /items - community feed with search & filter
 router.get("/", async (req, res) => {
@@ -101,7 +93,7 @@ router.post("/", authenticate, upload.single("image"), async (req: AuthRequest, 
     res.status(400).json({ message: "All fields required" }); return;
   }
 
-  const imageUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
+  const imageUrl = req.file ? (req.file as Express.Multer.File & { path: string }).path : undefined;
   const item = await prisma.item.create({
     data: {
       reporterId: req.user!.id,
